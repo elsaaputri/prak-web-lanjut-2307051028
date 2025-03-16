@@ -104,24 +104,34 @@
         @endif
 
         <form action="{{ route('user.store') }}" method="POST">
-            @csrf
-            <div class="mb-4">
-                <label class="input-label">Nama:</label>
-                <input type="text" name="nama" class="input-field" required>
-            </div>
-
-            <div class="mb-4">
-                <label class="input-label">NPM:</label>
-                <input type="text" name="npm" class="input-field" required>
-            </div>
-
-            <div class="mb-4">
-                <label class="input-label">Kelas:</label>
-                <input type="text" name="kelas" class="input-field" required>
-            </div>
-
-            <button type="submit" class="button-primary">Submit</button>
-        </form>
+    @csrf
+    <div class="mb-4">
+        <label class="input-label">Nama:</label>
+        <input type="text" name="nama" class="input-field" required>
+        @error('nama')
+            <div class="text-red-500 text-sm mt-1">* {{ $message }}</div>
+        @enderror
     </div>
-</body>
-</html>
+
+    <div class="mb-4">
+        <label class="input-label">NPM:</label>
+        <input type="text" name="npm" class="input-field" required>
+        @error('npm')
+            <div class="text-red-500 text-sm mt-1">* {{ $message }}</div>
+        @enderror
+    </div>
+
+    <div class="mb-4">
+        <label for="kelas_id" class="input-label">Kelas:</label>
+        <select name="kelas_id" id="kelas_id" required class="input-field">
+            @foreach ($kelas as $kelasItem)
+                <option value="{{ $kelasItem->id }}">{{ $kelasItem->nama_kelas }}</option>
+            @endforeach
+        </select>
+        @error('kelas_id')
+            <div class="text-red-500 text-sm mt-1">* {{ $message }}</div>
+        @enderror
+    </div>
+
+    <button type="submit" class="button-primary">Submit</button>
+</form>
