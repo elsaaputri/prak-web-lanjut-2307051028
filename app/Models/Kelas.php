@@ -1,17 +1,21 @@
-<?php
+<?php  
+namespace App\Models;  
 
-namespace App\Models;
+use Illuminate\Database\Eloquent\Factories\HasFactory;  
+use Illuminate\Database\Eloquent\Model;  
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+class Kelas extends Model {  
+    use HasFactory;  
 
-class Kelas extends Model
-{
-    use HasFactory;
+    protected $guarded = ['id'];  
+    protected $table = 'kelas'; // ✅ Ubah menjadi string, bukan array
 
-    protected $guarded = ['id'];
+    // Perbaiki return type getKelas()
+    public function getKelas() {  
+        return $this->all();  
+    }  
 
-    public function user(){
-        return $this->hasMany(UserModel::class, 'kelas_id');
-    }
-}
+    public function user(){  
+        return $this->hasMany(UserModel::class, 'kelas_id');  
+    }  
+}  
