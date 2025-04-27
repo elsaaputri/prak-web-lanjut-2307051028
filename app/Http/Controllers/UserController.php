@@ -1,98 +1,104 @@
 <?php
+
 namespace App\Http\Controllers;
-use App\Models\Kelas;
+
 use App\Models\User;
-use App\Models\UserModel;
 use Illuminate\Http\Request;
-use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\Storage;
 
-
-// class UserController extends Controller
-// {
-//     public function create()
-//     {
-//         $kelasModel = new Kelas();
-
-//         $kelas = $kelasModel->getKelas();
-
-//         $data = [
-//             'title' => 'Create User',
-//             'kelas' => $kelas,
-//         ];
-
-//         return view('create_user', $data);
-//     }
-
-
-//     public function store(UserRequest $request){
-//         $validatedData = $request->validate([
-//             'nama' => 'required|string|max:255',
-//             'npm' => 'required|string|max:255',
-//             'kelas_id' => 'required|exists:kelas,id',
-//         ]);
-    
-//         $user = UserModel::create($validatedData);
-    
-//         $user->load('kelas');
-    
-//         return view('profile', [
-//             'nama' => $user->nama,
-//             'npm' => $user->npm,
-//             'nama_kelas' => $user->kelas->nama_kelas ?? 'Kelas tidak ditemukan',
-//         ]);
-
-//         $data = [
-//             'nama' => $request->input('nama'),
-//             'kelas' => $request->input('kelas'),
-//             'npm' => $request->input('npm'),
-//         ];
-        
-//         return view('profile', $data);
-//     }
-// }
 class UserController extends Controller
 {
-    public $userModel;
-    public $kelasModel;
-
-    public function __construct()
+    public function index()
     {
-        $this->userModel = new UserModel();
-        $this->kelasModel = new Kelas();
+        $users = User::all(); // Ambil semua data user
+        return view('users.index', compact('users')); // Panggil view index
     }
-
+    
+    // Menampilkan halaman form untuk menambahkan user baru
     public function create()
     {
-        $kelas = $this->kelasModel->getKelas();
-
-        $data = [
-            'title' => 'Create User',
-            'kelas' => $kelas,
-        ];
-
-        return view('create_user', $data);
+        return view('users.create'); // Tampilkan form create user
     }
-    public function index()
-{
-    $users = $this->userModel->getUser();
 
-    $data = [
-        'title' => 'List User',
-        'users' => $users
-    ];
-
-    return view('list_user', $data);
-}
-public function store(Request $request)
+    public function store(Request $request)
 {
-    $this->userModel->create([
-        'nama' => $request->input('nama'),
-        'npm' => $request->input('npm'),
-        'kelas_id' => $request->input('kelas_id'),
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'npm' => 'required|string|max:255|unique:users,npm',
+        'kelas_id' => 'required|string',
+        'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
     ]);
 
-    return redirect()->to('/user');
+    $fotoPath = null;
+    if ($request->hasFile('foto')) {
+        $foto = $request->file('foto');
+        $namaFoto = time().'_'.$foto->getClientOriginalName();
+        $fotoPath = $foto->storeAs('uploads', $namaFoto, 'public');
+    }
+
+    User::create([
+        'name' => $request->name,
+        'npm' => $request->npm,
+        'kelas_id' => $request->kelas_id,
+        'foto' => $fotoPath, // disimpan sebagai string di database
+    ]);
+
+    return redirect('/user')->with('success', 'User berhasil ditambahkan');
+}
+
+    // Menampilkan detail user berdasarkan id
+    public function show($id)
+    {
+        $user = User::findOrFail($id); // Mencari user berdasarkan id
+        return view('users.show', compact('user')); // Menampilkan halaman detail user
+    }
+
+    // Menampilkan halaman form untuk mengedit user
+    public function edit($id)
+    {
+        $user = User::findOrFail($id); // Mencari user berdasarkan id
+        return view('users.edit', compact('user')); // Tampilkan form edit user
+    }
+
+    // Mengupdate data user
+    public function update(Request $request, $id)
+    {
+        // Validasi input
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'npm' => 'required|string|max:255',
+            'kelas_id' => 'required|integer',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validasi foto
+        ]);
+
+        $user = User::findOrFail($id); // Mencari user berdasarkan id
+
+        // Jika ada foto baru yang diupload
+        if ($request->hasFile('foto')) {
+            // Hapus foto lama dari storage
+            if ($user->foto) {
+                Storage::delete('public/' . $user->foto);
+            }
+
+            // Upload foto baru
+            $foto = $request->file('foto');
+            $fotoPath = $foto->store('upload/img', 'public');
+        } else {
+            // Jika tidak ada foto baru, gunakan foto lama
+            $fotoPath = $user->foto;
+        }
+
+        // Update data user di database
+        $user->update([
+            'name' => $request->input('name'),
+            'npm' => $request->input('npm'),
+            'kelas_id' => $request->input('kelas_id'),
+            'foto' => $fotoPath, // Update path foto
+        ]);
+
+        // Redirect kembali ke halaman list user dengan pesan sukses
+        return redirect()->route('users.index')->with('success', 'User berhasil diperbarui');
+    }
 }
 
 
-}
